@@ -23,11 +23,15 @@ public class analysisController {
 
     @RequestMapping(value = "/frequency",method = RequestMethod.GET)
     @ResponseBody
-    public Result<Object> wordFrequency(@RequestParam String fileName){
+    public Result<Object> wordFrequencyByMore(@RequestParam List<String> fileNames){
 
         try {
-            String article = fileParsingService.readPdf(fileName);
-            List result = wordAnalysisService.wordFrequency(article, null, 20);
+            StringBuffer stringBuffer = new StringBuffer();
+            for(String fileName : fileNames){
+                String article = fileParsingService.readPdf(fileName);
+                stringBuffer.append(article);
+            }
+            List result = wordAnalysisService.wordFrequency(stringBuffer.toString(), null, 20);
             return new ResultUtil<Object>().setData(result);
         }catch (Exception e){
             log.error("分析失败"+ e.getMessage());
