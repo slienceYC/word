@@ -34,9 +34,10 @@
         <div class="layui-upload">
             <button type="button" class="layui-btn layui-btn-normal" id="testList">选择多文件</button>
             <div class="layui-upload-list">
-                <table class="layui-table" id="file-table">
+                <table class="layui-table  layui-form" id="file-table">
                     <thead>
                     <tr>
+                        <th style="text-align: center;"><input type="checkbox" lay-skin="primary" lay-filter="allChoose"/></th>
                         <th>文件名</th>
                         <th>大小</th>
                         <th>状态</th>
@@ -48,6 +49,11 @@
                 </table>
             </div>
             <button type="button" class="layui-btn" id="testListAction">开始上传</button>
+        </div>
+
+
+        <div>
+            <button type="button" class="layui-btn">批量分析</button>
         </div>
 
         <div class="layui-card" style="margin-top: 20px; background-color: #F2F2F2;">
@@ -75,24 +81,30 @@
 
 <script src="/layui/layui.js" charset="utf-8"></script>
 <script>
-    layui.use(['jquery', 'upload'], function () {
+    layui.use(['jquery', 'upload','form'], function () {
         var $ = layui.jquery
-            , upload = layui.upload;
+            , upload = layui.upload, form = layui.form;;
         var filesList = [];
         var files;
+        var files1;
+        var arr=[];
         var demoListView = $('#demoList')
             , uploadListIns = upload.render({
             elem: '#testList'
-            , url: 'http://192.168.17.100:8888/word/file/upload' //改成您自己的上传接口
+            , url: 'http://localhost:8888/word/file/upload' //改成您自己的上传接口
             , accept: 'file'
             , multiple: true
             , auto: false
             , bindAction: '#testListAction'
             , choose: function (obj) {
+                console.log(obj)
                 files = this.files = obj.pushFile(); //将每次选择的文件追加到文件队列
+                files1 = {...obj.pushFile()};
                 //读取本地文件
                 obj.preview(function (index, file, result) {
-                    var tr = $(['<tr id="upload-' + index + '">'
+                   /* delete files[index];*/
+                    console.log(index, file, result,files)
+                    var tr = $(['<tr id="upload-' + index + '">','<td style="text-align: center;"><input type="checkbox" lay-skin="primary" table-index="'+index+'" lay-filter="itemChoose"/></td>'
                         , '<td>' + file.name + '</td>'
                         , '<td>' + (file.size / 1024).toFixed(1) + 'kb</td>'
                         , '<td>等待上传</td>'
@@ -103,6 +115,10 @@
                         , '<button class="layui-btn layui-btn-xs layui-btn-danger demo-delete">删除</button>'
                         , '</td>'
                         , '</tr>'].join(''));
+
+                    form.render();
+                    form.render('checkbox');
+
                     //单个重传
                     tr.find('.demo-reload').on('click', function () {
                         obj.upload(index, file);
@@ -110,7 +126,7 @@
 
                     //删除
                     tr.find('.demo-delete').on('click', function () {
-                        console.log(index)
+                        console.log(index,files)
                         delete files[index]; //删除对应的文件
                         tr.remove();
                         uploadListIns.config.elem.next()[0].value = ''; //清空 input file 值，以免删除后出现同名文件不可选
@@ -140,7 +156,47 @@
                         });
                     })
 
+                    //全选
+                    form.on('checkbox(allChoose)', function (data) {
+                        files=files1;
+                        var child = $(data.elem).parents('table').find('tbody input[type="checkbox"]');
+                        child.each(function (index, item) {
+                            item.checked = data.elem.checked;
+                        });
+                        form.render('checkbox');
+                    });
+
+                    //全选和部分选中时候,表头全选按钮的样式变化
+                    form.on('checkbox(itemChoose)', function (data) {
+                        var _index = $(data.elem).attr('table-index')||0;
+                        arr.push(_index);
+                      /*  files1 = JSON.parse(JSON.stringify(files1));*/
+                        files = {...files1};
+                       arr.push(_index);
+                       console.log(files,files1)
+                        for(k in files){
+                           console.log(k,arr.indexOf(k),arr)
+                            if(arr.indexOf(k)==-1){
+                                delete files[k]
+                            }
+                        }
+                        console.log(files)
+                        var sib = $(data.elem).parents('table').find('tbody input[type="checkbox"]:checked').length;
+                        var total = $(data.elem).parents('table').find('tbody input[type="checkbox"]').length;
+                        if (sib == total) {
+                            $(data.elem).parents('table').find('thead input[type="checkbox"]').prop("checked", true);
+                            form.render();
+                        } else {
+                            $(data.elem).parents('table').find('thead input[type="checkbox"]').prop("checked",
+                                false);
+                            form.render();
+                        }
+                    });
+
                     demoListView.append(tr);
+
+                    form.render();
+                    form.render('checkbox');
                 });
             }
             , done: function (res, index, upload) {
