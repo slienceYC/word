@@ -13,7 +13,9 @@ public class WordAnalysisServiceImpl implements WordAnalysisService {
 
     @Override
     public List wordFrequency(String article, String[] words, Integer rank) {
+
         Map<String, Integer> map = new HashMap<>();
+        System.out.println("开始分析----"+article.length());
 
         if (words == null) {
             String result = ToAnalysis.parse(article).toStringWithOutNature();
@@ -23,13 +25,14 @@ public class WordAnalysisServiceImpl implements WordAnalysisService {
 
         for (String word : words) {
             String str = word.trim();
+            String regEx="[`~!@#$%^&*()+=|{}':;',\\[\\].<>/?~！@#￥%……&*（）——+|{}【】‘；：”“’。，、？a-zA-Z0-9]";
             // 过滤空白字符
             if (str.equals(""))
                 continue;
                 // 过滤一些高频率的符号
-            else if (str.matches("[）|（|.|，|。|+|-|“|”|：|？|！|\\s]"))
+            else if (str.matches(regEx))
                 continue;
-                // 此处过滤长度为1的str
+            // 此处过滤长度为1的str
             else if (str.length() < 2)
                 continue;
 

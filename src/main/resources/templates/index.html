@@ -37,7 +37,7 @@
                 <table class="layui-table  layui-form" id="file-table">
                     <thead>
                     <tr>
-                        <th style="text-align: center;"><input type="checkbox" lay-skin="primary" lay-filter="allChoose"/></th>
+                        <th style="text-align: center;" class="layui-hide demo-check"><input type="checkbox" lay-skin="primary" lay-filter="allChoose"/></th>
                         <th>文件名</th>
                         <th>大小</th>
                         <th>状态</th>
@@ -49,12 +49,13 @@
                 </table>
             </div>
             <button type="button" class="layui-btn" id="testListAction">开始上传</button>
+            <button type="button" class="layui-btn layui-hide demo-check layui-btn-warm" id="doMore" >批量分析</button>
         </div>
 
 
-        <div style="margin-top: 20px">
-            <button type="button" class="layui-btn">批量分析</button>
-        </div>
+<!--        <div style="margin-top: 20px">-->
+<!--            <button type="button" class="layui-btn layui-hide demo-check" id="doMore" >批量分析</button>-->
+<!--        </div>-->
 
         <div class="layui-card" style="margin-top: 20px; background-color: #F2F2F2;">
             <div class="layui-card-header">分析结果</div>
@@ -90,7 +91,7 @@
         var demoListView = $('#demoList')
             , uploadListIns = upload.render({
             elem: '#testList'
-            , url: 'http://localhost:8888/word/file/upload' //改成您自己的上传接口
+            , url: 'https://ycdev.top/word/file/upload' //改成您自己的上传接口
             , accept: 'file'
             , multiple: true
             , auto: false
@@ -100,9 +101,9 @@
                 files = this.files = obj.pushFile(); //将每次选择的文件追加到文件队列
                 //读取本地文件
                 obj.preview(function (index, file, result) {
-                    delete files[index];
+                    // delete files[index];
                     console.log(index, file, result,files)
-                    var tr = $(['<tr id="upload-' + index + '">','<td style="text-align: center;"><input type="checkbox" lay-skin="primary" table-index="'+index+'" lay-filter="itemChoose"/></td>'
+                    var tr = $(['<tr id="upload-' + index + '">','<td style="text-align: center;" class="layui-hide demo-check"><input type="checkbox" lay-skin="primary" table-index="'+index+'" lay-filter="itemChoose"/></td>'
                         , '<td>' + file.name + '</td>'
                         , '<td>' + (file.size / 1024).toFixed(1) + 'kb</td>'
                         , '<td>等待上传</td>'
@@ -139,7 +140,7 @@
                             }
                         }
                         $.ajax({
-                            url: "http://192.168.17.100/word/analysis/frequency?fileName=" + fileName,
+                            url: "https://ycdev.yop/word/analysis/frequencyOne?fileName=" + fileName,
                             type: "get",
                             success: function (res) {
                                 console.log(res)
@@ -152,7 +153,42 @@
                                 }
                             }
                         });
-                    })
+                    });
+
+                    $("#doMore").on('click',function () {
+                        var fileNames = [];
+                        console.log(arr)
+                        console.log(filesList)
+                        if(arr.length == 0){
+                            return;
+                        }
+                        for(var i =0;i<arr.length;i++){
+                            for(var j=0;j<filesList.length;j++){
+                                if(filesList[j].fileIndex == arr[i]){
+                                    fileNames.push(filesList[i].fileName)
+                                    break
+                                }
+                            }
+                        }
+                        $.ajax({
+                            url: "https://ycdev.top/word/analysis/frequencyMore",
+                            type: "post",
+                            traditional: true,
+                            data: {
+                                "fileNames":fileNames
+                            },
+                            success: function (res) {
+                                console.log(res)
+                                var wordInfo = res.result;
+                                var wordList = $('#word-list');
+                                wordList.html('');
+                                for (var i = 0; i < wordInfo.length; i++) {
+                                    wordList.append('<tr><td>' + wordInfo[i].keyWord + '</td>'
+                                        + '<td>'+ wordInfo[i].frequency+ '</td>' + '<td></td></tr>')
+                                }
+                            }
+                        });
+                    });
 
                     //全选
                     form.on('checkbox(allChoose)', function (data) {
@@ -218,10 +254,11 @@
                         , tds = tr.children();
                     files[index].fileName = res.result.fileName;
                     files[index].fileIndex = index;
-                    tds.eq(2).html('<span style="color: #5FB878;">上传成功</span>');
-                    tds.eq(3).html('<span style="color: #5FB878;">' + res.result.fileName + '</span>');
-                    tds.eq(4).find(".demo-delete").addClass('layui-hide'); //清空操作
-                    tds.eq(4).find(".demo-read").removeClass('layui-hide')
+                    $(".demo-check").removeClass("layui-hide")
+                    tds.eq(3).html('<span style="color: #5FB878;">上传成功</span>');
+                    tds.eq(4).html('<span style="color: #5FB878;">' + res.result.fileName + '</span>');
+                    tds.eq(5).find(".demo-delete").addClass('layui-hide'); //清空操作
+                    tds.eq(5).find(".demo-read").removeClass('layui-hide')
                     filesList.push(files[index]);
                     console.log(filesList)
                     return delete this.files[index]; //删除文件队列已经上传成功的文件

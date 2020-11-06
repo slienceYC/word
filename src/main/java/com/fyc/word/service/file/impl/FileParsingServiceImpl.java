@@ -38,6 +38,7 @@ public class FileParsingServiceImpl implements FileParsingService {
             stripper .setSortByPosition(true); //sort设置为true 则按照行进行读取，默认是false
             // 从PDF文档对象中剥离文本
             result = stripper.getText(pdfdocument);
+            pdfdocument.close();
 
         } catch (Exception e) {
             log.error("读取pdf失败"+ e.getMessage());
